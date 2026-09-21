@@ -1448,6 +1448,16 @@
   'data'    : { '*grab-mod'   : 'HotKeyMod' } }
 
 ##
+# @DisplayWasm:
+#
+# Browser display backend options.
+#
+# Since: 10.2
+##
+{ 'struct': 'DisplayWasm',
+  'data': { } }
+
+##
 # @DisplayType:
 #
 # Display (user interface) type.
@@ -1482,6 +1492,8 @@
 #
 # @dbus: Start a D-Bus service for the display.  (Since 7.0)
 #
+# @wasm: Export the QEMU display surface to the browser.
+#
 # Since: 2.12
 ##
 { 'enum'    : 'DisplayType',
@@ -1494,7 +1506,8 @@
     { 'name': 'curses', 'if': 'CONFIG_CURSES' },
     { 'name': 'cocoa', 'if': 'CONFIG_COCOA' },
     { 'name': 'spice-app', 'if': 'CONFIG_SPICE' },
-    { 'name': 'dbus', 'if': 'CONFIG_DBUS_DISPLAY' }
+    { 'name': 'dbus', 'if': 'CONFIG_DBUS_DISPLAY' },
+    { 'name': 'wasm', 'if': 'CONFIG_WASM' }
   ]
 }
 
@@ -1532,7 +1545,8 @@
       'egl-headless': { 'type': 'DisplayEGLHeadless',
                         'if': 'CONFIG_OPENGL' },
       'dbus': { 'type': 'DisplayDBus', 'if': 'CONFIG_DBUS_DISPLAY' },
-      'sdl': { 'type': 'DisplaySDL', 'if': 'CONFIG_SDL' }
+      'sdl': { 'type': 'DisplaySDL', 'if': 'CONFIG_SDL' },
+      'wasm': { 'type': 'DisplayWasm', 'if': 'CONFIG_WASM' }
   }
 }
 

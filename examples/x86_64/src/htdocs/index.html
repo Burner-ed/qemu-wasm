@@ -4,6 +4,7 @@
     <link rel="stylesheet" href="./vendor/xterm.css" />
   </head>
   <body>
+    <canvas id="display"></canvas>
     <div id="terminal"></div>
     <script src="./load.js"></script>
     <script type="module">
@@ -14,6 +15,22 @@
 
       const xterm = new Terminal();
       xterm.open(document.getElementById("terminal"));
+
+      const display = document.getElementById("display");
+      Module.canvas = display.transferControlToOffscreen();
+      Module.qemuWasmDisplay = {
+        surface(width, height, format, stride, data) {
+          display.width = width;
+          display.height = height;
+          display.dataset.format = format;
+          display.dataset.stride = stride;
+          display.dataset.data = data;
+        },
+        update(data, stride, x, y, width, height) {
+          display.dataset.data = data;
+          display.dataset.dirty = `${x},${y},${width},${height}`;
+        },
+      };
 
       const { master, slave } = openpty();
 

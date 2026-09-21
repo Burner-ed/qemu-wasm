@@ -1,5 +1,5 @@
 Module['arguments'] = [
-    '-nographic', '-m', '512M', '-accel', 'tcg,tb-size=500',
+    '-display', 'wasm', '-m', '512M', '-accel', 'tcg,tb-size=500',
     //Use the following to enable MTTCG
     //'-nographic', '-m', '512M', '-accel', 'tcg,tb-size=500,thread=multi', '-smp', '4,sockets=4',
     '-L', '/pack/',

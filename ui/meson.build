@@ -29,6 +29,9 @@ system_ss.add(when: 'CONFIG_LINUX', if_true: files(
   'input-linux.c',
   'udmabuf.c',
 ))
+if cc.get_id() == 'emscripten'
+  system_ss.add(files('wasm.c'))
+endif
 system_ss.add(when: cocoa, if_true: files('cocoa.m'))
 
 vnc_ss = ss.source_set()
