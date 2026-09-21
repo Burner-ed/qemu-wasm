@@ -3,33 +3,61 @@
   <head>
     <meta charset="utf-8">
     <title>QEMU on browser(x86_64)</title>
-    <!-- 1. Ensure style vendor sheet points to the correct location -->
     <link rel="stylesheet" href="./vendor/xterm.css" />
     <style>
-      /* Quick wrapper optimization to give your canvas and terminal space */
-      body { margin: 0; background: #000; color: #fff; font-family: monospace; }
-      #terminal { width: 100%; height: 400px; }
-      #display { display: block; max-width: 100%; margin-bottom: 10px; }
+      body { margin: 0; background: #000; color: #fff; font-family: monospace; padding: 20px; }
+      #status { background: #111; border: 1px solid #333; padding: 15px; max-height: 200px; overflow-y: auto; white-space: pre-wrap; margin-bottom: 20px; color: #00ff00; }
+      #terminal { width: 100%; height: 400px; background: #000; }
+      #display { display: block; max-width: 100%; margin-bottom: 10px; background: #222; }
     </style>
   </head>
   <body>
+
+    <!-- On-screen Status Log Window -->
+    <div id="status">⏳ Initializing boot sequence...</div>
+
     <canvas id="display"></canvas>
     <div id="terminal"></div>
     
+    <script>
+      // Helper function to append text onto the screen
+      function logStatus(message, isError = false) {
+        const log = document.getElementById('status');
+        const color = isError ? '#ff3333' : '#00ff00';
+        log.innerHTML += `<span style="color: ${color}">\n${isError ? '❌ ERROR: ' : '✅ '}${message}</span>`;
+        log.scrollTop = log.scrollHeight; // Auto-scroll text down
+      }
+
+      // Catch any unexpected compilation or file errors instantly
+      window.addEventListener('error', function(e) {
+        logStatus(`${e.message} (File: ${e.filename.split('/').pop()}, Line: ${e.lineno})`, true);
+      });
+      window.addEventListener('unhandledrejection', function(e) {
+        logStatus(`Promise Broken: ${e.reason}`, true);
+      });
+
+      // Safely initialize Module early
+      window.Module = {};
+    </script>
+
     <script src="./load.js"></script>
     <script type="module">
-      // 2. Import Xterm and its pty addon bindings properly as module exports
-      import { Terminal } from 'https://unpkg.com/xterm@5.3.0/lib/xterm.js';
-      import { openpty } from 'https://unpkg.com/xterm-pty/index.js';
+      logStatus("Loading core UI modules from CDN...");
+      import { Terminal } from 'https://unpkg.com';
+      import { openpty } from 'https://unpkg.com';
+      
+      logStatus("Loading local workspace scripts (module.js, out.js)...");
       import './module.js';
       import initEmscriptenModule from './out.js';
 
-      // 3. Initialize the terminal from the imported module variable
+      logStatus("Initializing terminal grid layout...");
       const xterm = new Terminal();
       xterm.open(document.getElementById("terminal"));
 
+      logStatus("Binding Canvas offscreen controller context...");
       const display = document.getElementById("display");
       Module.canvas = display.transferControlToOffscreen();
+      
       Module.qemuWasmDisplay = {
         surface(width, height, format, stride, data) {
           display.width = width;
@@ -44,23 +72,31 @@
         },
       };
 
+      logStatus("Opening virtual terminal streams (PTY)...");
       const { master, slave } = openpty();
-
       xterm.loadAddon(master);
 
       Module.pty = slave;
       Module['mainScriptUrlOrBlob'] = location.origin + "/out.js";
       
       (async () => {
-          const instance = await initEmscriptenModule(Module);
-          
-          var oldPoll = Module['TTY'].stream_ops.poll;
-          var pty = Module['pty'];
-          Module['TTY'].stream_ops.poll = function(stream, timeout){
-              if (!pty.readable) {
-                  return (pty.readable ? 1 : 0) | (pty.writable ? 4 : 0);
-              }
-              return oldPoll.call(stream, timeout);
+          logStatus("Compiling WebAssembly binary modules. Booting QEMU core...");
+          try {
+              const instance = await initEmscriptenModule(Module);
+              logStatus("QEMU WebAssembly instance compiled perfectly!");
+              
+              var oldPoll = Module['TTY'].stream_ops.poll;
+              var pty = Module['pty'];
+              Module['TTY'].stream_ops.poll = function(stream, timeout){
+                  if (!pty.readable) {
+                      return (pty.readable ? 1 : 0) | (pty.writable ? 4 : 0);
+                  }
+                  return oldPoll.call(stream, timeout);
+              };
+              
+              logStatus("System configuration confirmed fine. All systems operational.");
+          } catch (err) {
+              logStatus(`WASM Compilation Failure: ${err.message}`, true);
           }
       })();
     </script>
