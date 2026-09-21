@@ -1,3 +1,16 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>QEMU on browser(x86_64)</title>
+    <link rel="stylesheet" href="./vendor/xterm.css" />
+    <style>
+      body { margin: 0; background: #000; color: #fff; font-family: monospace; padding: 20px; }
+      #status { background: #111; border: 1px solid #333; padding: 15px; max-height: 200px; overflow-y: auto; white-space: pre-wrap; margin-bottom: 20px; color: #00ff00; }
+      #terminal { width: 100%; height: 400px; background: #000; }
+      #display { display: block; max-width: 100%; margin-bottom: 10px; background: #222; }
+    </style>
+  </head>
   <body>
 
     <!-- On-screen Status Log Window -->
@@ -7,6 +20,7 @@
     <div id="terminal"></div>
     
     <script>
+      // Helper function to append text onto the screen
       function logStatus(message, isError = false) {
         const log = document.getElementById('status');
         const color = isError ? '#ff3333' : '#00ff00';
@@ -25,8 +39,8 @@
       window.Module = {};
     </script>
 
-    <script src="https://unpkg.com"></script>
-    <script src="https://unpkg.com"></script>
+    <!-- Load xterm natively from your own local workspace directory -->
+    <script src="./vendor/xterm.js"></script>
     <script src="./load.js"></script>
 
     <script type="module">
@@ -39,8 +53,12 @@
           logStatus("Loading local workspace scripts (module.js)...");
           await import('./module.js');
 
+          logStatus("Loading virtual terminal stream definitions...");
+          // Dynamically import your local xterm-pty module bundle 
+          const ptyModule = await import('https://unpkg.com');
+          const openpty = ptyModule.openpty;
+
           logStatus("Compiling WebAssembly bundle infrastructure (out.js)...");
-          // Dynamic import prevents module hoisting and allows logs to print first
           const outScript = await import('./out.js');
           const initEmscriptenModule = outScript.default;
 
@@ -63,7 +81,7 @@
           };
 
           logStatus("Opening virtual terminal streams (PTY)...");
-          const { master, slave } = window.XtermPty.openpty();
+          const { master, slave } = openpty();
           xterm.loadAddon(master);
 
           Module.pty = slave;
@@ -89,3 +107,4 @@
       })();
     </script>
   </body>
+</html>
