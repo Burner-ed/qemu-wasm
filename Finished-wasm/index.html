@@ -1,18 +1,30 @@
+<!DOCTYPE html>
 <html>
   <head>
+    <meta charset="utf-8">
     <title>QEMU on browser(x86_64)</title>
+    <!-- 1. Ensure style vendor sheet points to the correct location -->
     <link rel="stylesheet" href="./vendor/xterm.css" />
+    <style>
+      /* Quick wrapper optimization to give your canvas and terminal space */
+      body { margin: 0; background: #000; color: #fff; font-family: monospace; }
+      #terminal { width: 100%; height: 400px; }
+      #display { display: block; max-width: 100%; margin-bottom: 10px; }
+    </style>
   </head>
   <body>
     <canvas id="display"></canvas>
     <div id="terminal"></div>
+    
     <script src="./load.js"></script>
     <script type="module">
-      import 'https://unpkg.com/xterm@5.3.0/lib/xterm.js';
-      import 'https://unpkg.com/xterm-pty/index.js';
-      import './module.js'
+      // 2. Import Xterm and its pty addon bindings properly as module exports
+      import { Terminal } from 'https://unpkg.com/xterm@5.3.0/lib/xterm.js';
+      import { openpty } from 'https://unpkg.com/xterm-pty/index.js';
+      import './module.js';
       import initEmscriptenModule from './out.js';
 
+      // 3. Initialize the terminal from the imported module variable
       const xterm = new Terminal();
       xterm.open(document.getElementById("terminal"));
 
@@ -38,6 +50,7 @@
 
       Module.pty = slave;
       Module['mainScriptUrlOrBlob'] = location.origin + "/out.js";
+      
       (async () => {
           const instance = await initEmscriptenModule(Module);
           
